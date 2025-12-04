@@ -1,0 +1,211 @@
+import pandas as pd
+import json
+import os
+
+# --- הגדרות ---
+EXCEL_FILE = 'data.xlsx'
+HTML_OUTPUT = 'index.html'
+IMAGES_FOLDER = 'images'
+
+QUESTIONS = [
+    "רמת מוטיבציה", "עמידה בנהלים", "קבלת סמכות", "הבנת חומר הלימוד",
+    "שואל שאלות הבנה", "יכולת למידה עצמית", "סקרנות",
+    "יכולת לקבל ביקורת", "מגדיל ראש", "דירוג ביחס לכיתה"
+]
+
+def generate_html():
+    print("--- מתחיל בתהליך (מצב קישורים לתיקייה) ---")
+    
+    # בדיקה שהאקסל קיים
+    if not os.path.exists(EXCEL_FILE):
+        print(f"❌ שגיאה: הקובץ '{EXCEL_FILE}' לא נמצא.")
+        return
+
+    try:
+        df = pd.read_excel(EXCEL_FILE)
+    except Exception as e:
+        print(f"❌ שגיאה בקריאת האקסל: {e}")
+        return
+
+    students_data = []
+    print(f"...קורא {len(df)} שורות מהאקסל...")
+
+    for index, row in df.iterrows():
+        try:
+            # שליפת הנתונים לפי השמות שראינו אצלך באקסל
+            s_id = str(row['תז']).strip()
+            s_name = str(row['Item Name']).strip()
+            raw_image_name = str(row['תמונת התלמיד'])
+
+            # ניקוי שם הקובץ (מסיר את monday_images\ משם הקובץ)
+            clean_filename = raw_image_name.replace('\\', '/').split('/')[-1]
+            
+            # יצירת הקישור - פשוט מצביע לתיקייה images
+            # התוצאה תהיה משהו כמו: images/moshe.jpg
+            img_src = f"{IMAGES_FOLDER}/{clean_filename}"
+
+            students_data.append({
+                "id": s_id,
+                "name": s_name,
+                "imagePath": img_src
+            })
+            
+        except KeyError as e:
+            print(f"⚠️ שגיאה בשורה {index}: חסרה עמודה {e}")
+            continue
+        except Exception as e:
+            print(f"שגיאה כללית בשורה {index}: {e}")
+            continue
+
+    # המרה ל-JSON
+    json_data = json.dumps(students_data, ensure_ascii=False)
+    json_questions = json.dumps(QUESTIONS, ensure_ascii=False)
+
+    print(f"✅ נמצאו {len(students_data)} תלמידים. יוצר את קובץ ה-HTML...")
+
+    # ה-HTML (ללא שינוי, הוא כבר יודע לקבל נתיב)
+    html_content = f"""
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>שאלון הערכת תלמידים</title>
+    <style>
+        :root {{ --primary: #0073e6; --bg: #f4f7f6; --success: #28a745; }}
+        body {{ font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; height: 100vh; display: flex; overflow: hidden; }}
+        .sidebar {{ width: 320px; background: #fff; border-left: 1px solid #ddd; display: flex; flex-direction: column; }}
+        .sidebar-header {{ padding: 20px; background: var(--primary); color: white; text-align: center; }}
+        .export-box {{ padding: 10px; border-bottom: 1px solid #eee; text-align: center; }}
+        .btn-export {{ background: var(--success); color: white; border: none; padding: 10px; width: 90%; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+        .student-list {{ overflow-y: auto; flex: 1; padding: 10px; }}
+        .student-card {{ display: flex; align-items: center; padding: 10px; margin-bottom: 8px; background: white; border: 1px solid #eee; border-radius: 8px; cursor: pointer; transition: 0.2s; }}
+        .student-card:hover {{ background: #f0f8ff; }}
+        .student-card.active {{ border: 2px solid var(--primary); background: #e6f7ff; }}
+        .student-card.completed {{ opacity: 0.6; background: #e8ffe8; border-color: var(--success); }}
+        .student-card.completed::after {{ content: '✔'; color: var(--success); margin-right: auto; font-weight: bold; }}
+        .student-img {{ width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-left: 10px; border: 1px solid #ccc; background: #eee; }}
+        .student-info h4 {{ margin: 0; font-size: 1rem; }}
+        .student-info p {{ margin: 0; font-size: 0.8rem; color: #666; }}
+        .main-content {{ flex: 1; padding: 30px; overflow-y: auto; display: flex; justify-content: center; }}
+        .form-container {{ background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 800px; display: none; }}
+        .form-header {{ display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--primary); padding-bottom: 15px; }}
+        .big-img {{ width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-left: 20px; border: 4px solid var(--primary); }}
+        .question-row {{ margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }}
+        .question-label {{ font-weight: bold; font-size: 1.1rem; display: block; margin-bottom: 10px; }}
+        .options-container {{ display: flex; gap: 15px; flex-wrap: wrap; }}
+        .radio-group label {{ cursor: pointer; padding: 5px 12px; border: 1px solid #ddd; border-radius: 4px; display: inline-block; }}
+        .radio-group input:checked + label {{ background: var(--primary); color: white; border-color: var(--primary); }}
+        .na-option input:checked + label {{ background: #6c757d; border-color: #6c757d; color: white; }}
+        input[type="radio"] {{ display: none; }}
+        .btn-submit {{ background: var(--primary); color: white; padding: 15px; border: none; border-radius: 5px; width: 100%; font-size: 1.2rem; cursor: pointer; margin-top: 20px; }}
+        .welcome-msg {{ margin-top: 100px; color: #777; text-align: center; }}
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header"><h3>רשימת תלמידים</h3></div>
+    <div class="export-box"><button class="btn-export" onclick="exportToCSV()">📥 סיום והורדת אקסל</button></div>
+    <div class="student-list" id="studentList"></div>
+</div>
+<div class="main-content">
+    <div id="welcomeMsg" class="welcome-msg"><h2>בחר תלמיד מהרשימה כדי להתחיל</h2></div>
+    <form id="surveyForm" class="form-container">
+        <div class="form-header"><img id="currentStudentImg" class="big-img" src="" alt=""><div><h2 id="currentStudentName"></h2><p id="currentStudentId"></p></div></div>
+        <div id="questionsContainer"></div>
+        <button type="submit" class="btn-submit">שמור נתונים ועבור לתלמיד הבא</button>
+    </form>
+</div>
+<script>
+    const students = {json_data};
+    const questions = {json_questions};
+    let currentIndex = -1;
+    let results = JSON.parse(localStorage.getItem('teacherSurveyResults')) || {{}};
+
+    function init() {{ renderList(); renderQuestions(); }}
+
+    function renderList() {{
+        const list = document.getElementById('studentList');
+        list.innerHTML = '';
+        students.forEach((s, i) => {{
+            const isDone = results[s.id] ? 'completed' : '';
+            const div = document.createElement('div');
+            div.className = `student-card ${{isDone}}`;
+            div.onclick = () => loadStudent(i);
+            
+            // כאן השינוי - התמונה היא קישור רגיל
+            // הוספנו מנגנון שאם התמונה לא נמצאת, תוצג תמונה ריקה
+            div.innerHTML = `<img src="${{s.imagePath}}" class="student-img" onerror="this.src='https://via.placeholder.com/50'"><div class="student-info"><h4>${{s.name}}</h4><p>${{s.id}}</p></div>`;
+            list.appendChild(div);
+        }});
+    }}
+
+    function renderQuestions() {{
+        const container = document.getElementById('questionsContainer');
+        questions.forEach((q, idx) => {{
+            let html = `<div class="question-row"><span class="question-label">${{q}}</span><div class="options-container">`;
+            for(let i=1; i<=6; i++) html += `<div class="radio-group"><input type="radio" name="${{q}}" id="q${{idx}}_${{i}}" value="${{i}}" required><label for="q${{idx}}_${{i}}">${{i}}</label></div>`;
+            html += `<div class="radio-group na-option"><input type="radio" name="${{q}}" id="q${{idx}}_na" value="לא נמדד"><label for="q${{idx}}_na">לא נמדד</label></div></div></div>`;
+            container.innerHTML += html;
+        }});
+    }}
+
+    function loadStudent(index) {{
+        currentIndex = index;
+        const s = students[index];
+        document.getElementById('welcomeMsg').style.display = 'none';
+        document.getElementById('surveyForm').style.display = 'block';
+        document.getElementById('currentStudentName').textContent = s.name;
+        document.getElementById('currentStudentId').textContent = s.id;
+        
+        // טעינת תמונה עם מנגנון גיבוי במקרה של שגיאה
+        const imgEl = document.getElementById('currentStudentImg');
+        imgEl.onerror = function() {{ this.src = 'https://via.placeholder.com/150?text=No+Image'; }};
+        imgEl.src = s.imagePath;
+
+        document.querySelectorAll('.student-card').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.student-card')[index].classList.add('active');
+        document.getElementById('surveyForm').reset();
+        if(results[s.id]) Object.entries(results[s.id]).forEach(([k, v]) => {{ document.getElementsByName(k).forEach(el => {{ if(el.value === v) el.checked = true; }}); }});
+    }}
+
+    document.getElementById('surveyForm').onsubmit = (e) => {{
+        e.preventDefault();
+        const s = students[currentIndex];
+        const formData = new FormData(e.target);
+        const data = {{ studentName: s.name, studentId: s.id }};
+        formData.forEach((v, k) => data[k] = v);
+        results[s.id] = data;
+        localStorage.setItem('teacherSurveyResults', JSON.stringify(results));
+        renderList();
+        alert('נשמר!');
+    }};
+
+    function exportToCSV() {{
+        const ids = Object.keys(results);
+        if(!ids.length) return alert('אין נתונים לייצוא');
+        let csv = "\uFEFFשם,ת.ז," + questions.join(",") + "\\n";
+        ids.forEach(id => {{
+            const r = results[id];
+            let row = [`"${{r.studentName}}"` , `"${{r.studentId}}"`];
+            questions.forEach(q => row.push(`"${{r[q] || ''}}"`));
+            csv += row.join(",") + "\\n";
+        }});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([csv], {{type: 'text/csv;charset=utf-8;'}}));
+        link.download = "תוצאות_סקר.csv";
+        link.click();
+    }}
+    init();
+</script>
+</body>
+</html>
+    """
+    
+    with open(HTML_OUTPUT, "w", encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"✅ הקובץ {HTML_OUTPUT} נוצר בהצלחה!")
+
+if __name__ == "__main__":
+    generate_html()
