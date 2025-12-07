@@ -4,110 +4,157 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>סקר קודקוד - ייצוא לאקסל</title>
-
+        <title>מערכת הערכה - קודקוד</title>
         <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 
         <style>
-            :root { --primary: #217346; /* ירוק אקסל */ --bg: #f3f4f6; }
-            body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); margin: 0; padding-bottom: 100px; }
-
-            .main-header {
-                background: linear-gradient(135deg, #3949ab 0%, #1e88e5 100%);
-                color: white; padding: 30px 20px; text-align: center;
-                border-radius: 0 0 25px 25px; margin-bottom: 25px;
+            :root {
+                --sidebar-bg: #2c3e50;
+                --bg-main: #f4f6f8;
+                --text-dark: #2c3e50;
+                --primary: #3498db;
             }
-            .main-header h1 { margin: 0; font-size: 1.8rem; }
-            .main-header h2 { margin: 5px 0 0; font-size: 1rem; opacity: 0.9; font-weight: normal; }
+            * { box-sizing: border-box; }
+            body { font-family: 'Assistant', sans-serif; background: var(--bg-main); margin: 0; display: flex; min-height: 100vh; color: var(--text-dark); }
 
-            .container { max-width: 800px; margin: 0 auto; padding: 0 10px; }
-            .filter-box {
-                background: white; padding: 15px; border-radius: 12px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 10px; z-index: 100;
-                border: 1px solid #e0e0e0; margin-bottom: 20px;
+            /* סרגל צד */
+            .sidebar {
+                width: 280px; background: var(--sidebar-bg); color: white; padding: 25px;
+                position: fixed; right: 0; top: 0; height: 100vh; z-index: 100;
+                display: flex; flex-direction: column;
+                box-shadow: -4px 0 10px rgba(0,0,0,0.1);
             }
-            select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+            .brand h1 { margin: 0; font-size: 2rem; }
+            .brand span { opacity: 0.6; font-size: 0.9rem; }
 
+            .filters { margin-top: 30px; }
+            .filters label { display: block; margin-bottom: 5px; color: #bdc3c7; font-size: 0.9rem; }
+            select { width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #4a6278; background: #34495e; color: white; }
+
+            .excel-btn {
+                margin-top: auto; background: #27ae60; color: white; border: none; padding: 15px;
+                border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            }
+            .excel-btn:hover { background: #219150; }
+
+            /* תוכן ראשי */
+            .main-content { margin-right: 280px; width: calc(100% - 280px); padding: 40px; }
+
+            /* תיבת הוראות */
+            .info-box {
+                background: white; border-right: 5px solid #e67e22; padding: 20px; border-radius: 8px;
+                margin-bottom: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            }
+            .info-box h2 { margin-top: 0; color: #d35400; font-size: 1.3rem; display: flex; align-items: center; gap: 8px; }
+            .info-box p { line-height: 1.5; color: #555; margin-bottom: 0; }
+
+            /* כרטיס תלמיד */
             .student-card {
-                background: white; border-radius: 12px; padding: 0; margin-bottom: 20px;
-                border: 1px solid #e0e0e0; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+                background: white; border-radius: 10px; border: 1px solid #e0e0e0;
+                margin-bottom: 25px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+                transition: transform 0.2s;
             }
-            .student-card.filled { border: 2px solid var(--primary); }
+            .student-card.filled { border: 2px solid #27ae60; background: #f9fffb; }
 
             .card-header {
-                display: flex; align-items: center; padding: 15px;
-                background-color: #fafafa; border-bottom: 1px solid #eee;
+                padding: 15px 20px; background: #fafafa; border-bottom: 1px solid #eee;
+                display: flex; align-items: center; gap: 15px;
             }
             .student-img {
-                width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
-                margin-left: 15px; border: 2px solid white; background: #eee;
+                width: 70px; height: 70px; border-radius: 50%; object-fit: cover;
+                border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
-            .info h3 { margin: 0; font-size: 1.1rem; }
 
-            .rating-section { padding: 15px; }
-            .rating-row { margin-bottom: 12px; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px; }
-            .rating-label { font-weight: 600; display: block; margin-bottom: 5px; font-size: 0.9rem; }
-            .rating-options { display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; }
-
-            .radio-group input { display: none; }
-            .circle-btn {
-                width: 30px; height: 30px; border-radius: 50%;
-                background: #f0f0f0; color: #555; display: flex; justify-content: center; align-items: center;
-                font-weight: bold; font-size: 14px; border: 1px solid #ddd;
+            .status-badge {
+                margin-right: auto; background: #d4edda; color: #155724; padding: 4px 12px;
+                border-radius: 20px; font-size: 0.85rem; font-weight: bold; display: none;
             }
+            .student-card.filled .status-badge { display: block; }
+
+            /* אזור דירוג */
+            .criteria-grid { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+            .criteria-item { border-bottom: 1px dashed #eee; padding-bottom: 10px; }
+            .criteria-label { font-weight: 600; display: block; margin-bottom: 8px; color: #555; }
+
+            .rating-options { display: flex; justify-content: space-between; gap: 4px; }
+            .radio-label input { display: none; }
+
+            /* עיגולים צבעוניים */
+            .radio-box {
+                width: 32px; height: 32px; border-radius: 50%;
+                display: flex; justify-content: center; align-items: center;
+                cursor: pointer; background: #f0f0f0; color: #777; font-weight: bold; font-size: 14px;
+                border: 1px solid #ddd; transition: all 0.2s;
+            }
+
+            /* צבעים לפי מספר */
+            .radio-label:nth-of-type(1) input:checked + .radio-box { background: #e74c3c; color: white; border-color: #c0392b; } /* אדום חזק */
+            .radio-label:nth-of-type(2) input:checked + .radio-box { background: #e67e22; color: white; border-color: #d35400; } /* כתום */
+            .radio-label:nth-of-type(3) input:checked + .radio-box { background: #f1c40f; color: white; border-color: #f39c12; } /* צהוב */
+            .radio-label:nth-of-type(4) input:checked + .radio-box { background: #f1c40f; color: white; border-color: #f39c12; } /* צהוב */
+            .radio-label:nth-of-type(5) input:checked + .radio-box { background: #2ecc71; color: white; border-color: #27ae60; } /* ירוק */
+            .radio-label:nth-of-type(6) input:checked + .radio-box { background: #27ae60; color: white; border-color: #219150; } /* ירוק כהה */
+
+            /* כפתור לא נמדד */
             .na-btn { width: auto; padding: 0 10px; border-radius: 15px; font-size: 12px; }
+            .radio-label:last-child input:checked + .radio-box { background: #95a5a6; color: white; border-color: #7f8c8d; }
 
-            input:checked + .circle-btn { background-color: var(--primary); color: white; border-color: var(--primary); }
-            input:checked + .na-btn { background-color: #78909c; border-color: #78909c; }
+            input:checked + .radio-box { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-            .note-area { padding: 0 15px 15px; }
-            textarea { width: 100%; height: 60px; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-
-            /* כפתור אקסל צף */
-            .excel-fab {
-                position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-                background-color: #217346; color: white;
-                padding: 15px 30px; border-radius: 50px;
-                font-size: 1.2rem; font-weight: bold;
-                box-shadow: 0 4px 15px rgba(33, 115, 70, 0.4);
-                cursor: pointer; border: none; z-index: 1000;
-                display: flex; align-items: center; gap: 10px;
-                width: 80%; justify-content: center; max-width: 350px;
-            }
-            .excel-fab:hover { background-color: #1e6b41; }
+            .notes-section { padding: 0 20px 20px; }
+            textarea { width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; min-height: 60px; font-family: inherit; }
 
             .hidden { display: none; }
+
+            @media (max-width: 800px) {
+                body { flex-direction: column; }
+                .sidebar { position: relative; width: 100%; height: auto; }
+                .main-content { margin-right: 0; width: 100%; padding: 15px; }
+            }
         </style>
     </head>
     <body>
 
-        <header class="main-header">
-            <h1>מערכת הערכת תלמידים</h1>
-            <h2>עמותת קודקוד</h2>
-        </header>
-
-        <div class="container">
-            <div class="filter-box">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>KODKOD</h1>
+                <span>Evaluation System</span>
+            </div>
+            <div class="filters">
+                <label>סניף</label>
                 <select id="branchSelect" onchange="loadMegama()">
-                    <option value="">🏢 בחר סניף...</option>
+                    <option value="">בחר סניף...</option>
                 </select>
+                <label>כיתת מגמה</label>
                 <select id="classSelect" onchange="renderStudents()" disabled>
-                    <option value="">🎓 בחר מגמה...</option>
+                    <option value="">בחר קודם סניף...</option>
                 </select>
+            </div>
+            <button onclick="downloadExcel()" class="excel-btn hidden" id="downloadBtn">
+                <span>הורד נתונים לאקסל</span> 📥
+            </button>
+        </aside>
+
+        <main class="main-content">
+            <div class="info-box">
+                <h2>⚠️ מורים יקרים, שימו לב!</h2>
+                <p>
+                    למילוי טופס זה חשיבות מכרעת בעתידם של התלמידים. הנתונים שתזינו מהווים גורם משמעותי בשיבוצם ליחידות הטכנולוגיות השונות בצה"ל. 
+                    הערכה כנה ומדויקת תסייע לנו להתאים לכל תלמיד את התפקיד ההולם ביותר את כישוריו, ותפתח בפניו דלתות להזדמנויות משמעותיות בשירות הצבאי ובעתיד.
+                    <br><strong>תודה על שיתוף הפעולה!</strong>
+                </p>
             </div>
 
             <div id="students-container">
-                <div style="text-align:center; padding: 40px; color:#999;">נא לבחור סניף ומגמה כדי להתחיל</div>
+                <div style="text-align:center; margin-top:50px; color:#999;">
+                    <h2>אנא בחר סניף ומגמה כדי להתחיל</h2>
+                </div>
             </div>
-        </div>
-
-        <button onclick="downloadExcel()" class="excel-fab hidden" id="downloadBtn">
-            <span>הורד קובץ אקסל</span>
-            <span style="font-size: 1.5em;">📊</span>
-        </button>
+        </main>
 
         <script>
-            const data = {"פתח תקוה": {"גיאואינט": [{"name": "איתמר עדני", "id": "325548766", "image": "images/2549041224_IMG-20250817-WA0141.jpg"}, {"name": "בניהו מלכה", "id": "211885058", "image": "images/2549037093_IMG_20250326_114945_562 1.jpg"}, {"name": "אריאל עמירה", "id": "325037935", "image": "images/2549035715_צילום מסך 2025-12-02 201226.png"}, {"name": "ישראל אליאך", "id": "208091512", "image": "images/2549037091_IMG_5864.jpeg"}, {"name": "ארי רוט", "id": "326375763", "image": "images/2549041157_563de6d9-4801-4c94-b35c-e5e64063aa07.jpeg"}, {"name": "נתנאל זילברמן", "id": "314622796", "image": "images/2549033413_IMG_6049.jpeg"}, {"name": "ידידיה קריסטל", "id": "326593118", "image": "images/2549042715_תמונת פספורט ידידיה.jpeg"}, {"name": "אריה כהן", "id": "213291511", "image": "images/2549037071_20250827_202023.heic"}], "ללא מגמה": [{"name": "יוסי ויסברג", "id": "323806554", "image": "images/2549035698_פספורט.jpg"}], "תכנות 2 פת": [{"name": "אלעזר ערנטרוי", "id": "315640169", "image": "images/2549037069_צילום מסך 2025-12-02 201426.png"}, {"name": "יהונתן קובי", "id": "212402283", "image": "images/2549041145_20250819_123043.jpg"}, {"name": "שמעון כהן", "id": "214684037", "image": "images/2549042557_Screenshot_20250818_142506_Gallery.jpg"}, {"name": "איציק פרידמן", "id": "214992513", "image": "images/2549038710_20250808_085327.jpg"}, {"name": "אלעזר קראוס", "id": "325153526", "image": "images/2549042688_IMG-20240108-WA0030.jpg"}, {"name": "ראובן רוזן", "id": "227369451", "image": "images/2549033556_image.jpg"}, {"name": "אשר פירוב", "id": "323816587", "image": "images/2549037002_אשר פירוב.png"}, {"name": "אריה טולנפלד", "id": "325554368", "image": "images/2549038640_20250831_232842.jpg"}, {"name": "מנחם כהן", "id": "315602011", "image": "images/2549037085_תמונה.jpg"}, {"name": "דוד בן שושן", "id": "326618444", "image": "images/2549035629_IMG_1987.jpeg"}, {"name": "שילה וקסלר", "id": "324825538", "image": "images/2549038554_IMG_3800.jpeg"}, {"name": "מרדכי פסח", "id": "209560622", "image": "images/2549038654_17567501263157312177652076608661.jpg"}, {"name": "סער שמואל אפרת", "id": "325375293", "image": "images/2549035783_20250813_122531.jpg"}, {"name": "בני דושינסקי", "id": "214597155", "image": "images/2549041069_בני.jpg"}, {"name": "מאיר לבייב", "id": "326668639", "image": "images/2549036955_1122.jpg"}, {"name": "יעקב ברנט", "id": "212222202", "image": "images/2549035796_IMG-20250831-WA0083.jpg"}, {"name": "מאיר זילברמן", "id": "212729099", "image": "images/2549041141_20250820_080252.jpg"}, {"name": "אושי פיליפ", "id": "213496573", "image": "images/2549037007_WIN_20250813_07_34_30_Pro.jpg"}, {"name": "יעקב קורלנסקי", "id": "212129068", "image": "images/2549035676_20250821_173134.jpg"}, {"name": "שלומי חי שרגא", "id": "316528140", "image": "images/2549035711_20250902_070755.jpg"}, {"name": "יוסי שלאס", "id": "314886086", "image": "images/2549041221_פספורט.JPG"}, {"name": "דוד רובינשטיין", "id": "324252758", "image": "images/2549035798_תמונת פרופיל.jpg"}, {"name": "בנימין אבוטבול", "id": "214377392", "image": "images/2549035578_צילום מסך 2025-12-02 203008.png"}, {"name": "מרדכי כהן הלפרין", "id": "212120109", "image": "images/2549035412_20250820_195148.jpg"}, {"name": "שמשי פדר", "id": "318673027", "image": "images/2549035684_תמונת פרופיל.jpg"}, {"name": "משה יעקב זילבר", "id": "322929761", "image": "images/2549035706_IMG-20250915-WA0057.jpg"}, {"name": "אברהם אלמליח", "id": "213120397", "image": "images/2549037152_20250825_195528.heic"}, {"name": "שמעון אברמציוב", "id": "325449064", "image": "images/2549035582_image.jpg"}, {"name": "אפרים שישו", "id": "326638566", "image": "images/2549037067_image.jpg"}, {"name": "אהרן גרינברגר", "id": "214715351", "image": "images/2549035683_20250818_002502.jpg"}, {"name": "מנחם גלנצברג", "id": "215068529", "image": "https://via.placeholder.com/150?text=No+Img"}], "דאטה ושפה": [{"name": "אברהם רוזנברג", "id": "212401871", "image": "images/2549036967_Screenshot_20250916-011357_Gallery.jpg"}, {"name": "יוסף רודרמן", "id": "315239707", "image": "images/2549035685_IMG_3447.jpeg"}, {"name": "נהוראי גואטה", "id": "322433350", "image": "images/2549035580_IMG_20250828_143023934.jpg"}], "אלקטרוניקה פת": [{"name": "אליהו בשארי", "id": "315242982", "image": "images/2549033422_20250818_152225.jpg"}, {"name": "אליהו סרור", "id": "325751329", "image": "images/2549042523_IMG_6879.jpeg"}, {"name": "אבישי מאיר והב", "id": "212816912", "image": "images/2549042646_צילום מסך 2025-12-02 204145.png"}, {"name": "דוד נחום", "id": "322318932", "image": "images/2549042561_IMG_20251005_003953.jpg"}, {"name": "ישראל מאיר מזרחי", "id": "326041704", "image": "images/2549033529_20250916_093717.jpg"}, {"name": "משה כהן", "id": "323054841", "image": "images/2549033674_Screenshot_20250814_022016_Gallery.jpg"}, {"name": "נפתלי צבי יהודה ברלין", "id": "207294976", "image": "images/2549038694_IMG-20241230-WA00691.jpg"}, {"name": "איציק בורנשטיין", "id": "212758908", "image": "images/2549038676_20250821_172413.heic"}, {"name": "ישראל אלבז", "id": "215126236", "image": "images/2549038805_20250828_1814591.jpg"}, {"name": "אריאל וייסנשטרן", "id": "325561520", "image": "images/2549038784_20250831_003017.jpg"}, {"name": "יהונתן לוי", "id": "213140387", "image": "images/2549033530_20251109_165417.jpg"}, {"name": "אלחנן לוי שכטר", "id": "318786282", "image": "images/2549033660_תמונה אלחנן.jpg"}, {"name": "יעקב דייטש", "id": "327755005", "image": "images/2549042620_20250813_190127.jpg"}, {"name": "שמעון יעקובוב", "id": "313244790", "image": "images/2549033376_unnamed.jpg"}, {"name": "נחום דיקמן", "id": "213277171", "image": "images/2549042599_1002667457.jpg"}], "אלקטרוניקה ים": [{"name": "יוסף לוי", "id": "212961809", "image": "images/2549038737_17579285631937920901456925106726.jpg"}], "תכנות 1 פת": [{"name": "יעקב שלום נוילנדר", "id": "211594502", "image": "images/2549033669_image.jpg"}, {"name": "ישראל בירנברג", "id": "322446261", "image": "images/2549042563_IMG-20250915-WA0263.jpg"}, {"name": "ישראל משה קוביטשוק", "id": "213427883", "image": "images/2549033380_20250828_224335.jpg"}, {"name": "משה חריטן", "id": "214339822", "image": "images/2549037144_image.jpg"}, {"name": "אהרון קצבורג", "id": "322682246", "image": "images/2549033497_IMG-20250820-WA0081.jpg"}, {"name": "שמואל הורביץ", "id": "214378820", "image": "images/2549041066_IMG-20250818-WA0116.jpg"}, {"name": "שלמה וקסמן", "id": "326001591", "image": "images/2549035645_IMG-20250821-WA0015.jpg"}, {"name": "אלי טסלר", "id": "207647629", "image": "images/2549041151_צילום מסך 2025-12-02 202345.png"}, {"name": "אשר צבי פלדמן", "id": "211431069", "image": "images/2549038655_image.jpg"}, {"name": "אברהם רוזנגרטן", "id": "315857318", "image": "images/2549037003_image.jpg"}, {"name": "יצחק אייזק גליק", "id": "213877301", "image": "images/2549038656_תמונה לכרטיס סטודנט.jpg"}, {"name": "מנחם אמיתי", "id": "213897697", "image": "images/2549041118_IMG_5950.jpeg"}, {"name": "אלעזר אלטמן", "id": "213928401", "image": "images/2549038782_20250806_1909171.jpg"}, {"name": "דוד מקלב", "id": "209303155", "image": "images/2549041218_20250817_171046.jpg"}, {"name": "חזקי ארנפלד", "id": "327531331", "image": "images/2549037294_IMG-20250821-WA0196.jpg"}, {"name": "אברהם איצקוביץ", "id": "214180242", "image": "images/2549035646_תמונה פספורט.JPG"}, {"name": "יעקב אוחיון", "id": "208891580", "image": "images/2549035677_IMG-20250813-WA0248.jpg"}, {"name": "שלמה ברוך נויפלד", "id": "322593807", "image": "images/2549041154_SIMSd620005_0002.jpg"}, {"name": "נתי ליאני", "id": "315548693", "image": "images/2549037065_IMG_7457.jpeg"}, {"name": "חיים יהודי", "id": "214434995", "image": "images/2549041128_20250821_235603.jpg"}, {"name": "חיים מילר", "id": "326617107", "image": "images/2549038557_WIN_20250831_19_16_56_Pro.jpg"}, {"name": "נתנאל בן זקן", "id": "324151414", "image": "images/2549035537_תמונה.pdf"}, {"name": "נהוראי מגורי", "id": "324953447", "image": "images/2549037291_IMG_3240.png"}, {"name": "ישראל משה ברמינקה", "id": "325019081", "image": "images/2549035799_20250506_10431811.jpg"}, {"name": "אהרון רבהון", "id": "211769187", "image": "images/2549035703_20250820_185247.png"}, {"name": "חיים יעקבסון", "id": "213396039", "image": "images/2549037290_צילום מסך 2025-12-02 203042.png"}, {"name": "נתנאל מליחי", "id": "315162099", "image": "images/2549033673_17557159604633373023101059013953.jpg"}, {"name": "דוד ימין", "id": "325959609", "image": "images/2549037089_Screenshot_20250831_092516_Gallery.jpg"}, {"name": "שמואל צבי קובלסקי", "id": "316334424", "image": "images/2549033634_image.jpg"}], "רשתות": [{"name": "אהרון אייזיק וייסמן", "id": "207142423", "image": "images/2549038670_17566680695027644326595349720279.jpg"}], "תכנות פטור פת": [{"name": "נתנאל קאפלין", "id": "325134666", "image": "images/2549038713_IMG_9786.jpeg"}, {"name": "שמחה קופרמן", "id": "212036511", "image": "images/2549038594_20250817_213710.jpg"}, {"name": "אבי קליין", "id": "323011379", "image": "images/2549041117_צילום מסך 2025-12-02 201711.png"}, {"name": "מאיר הולצר", "id": "208463869", "image": "images/2549042521_20250820_234615.jpg"}, {"name": "יצחק רובין", "id": "206913956", "image": "images/2549033424_תמונה.jpeg"}, {"name": "יעקב גרינבוים", "id": "324240860", "image": "images/2549036954_תמונת פספורט.jpg"}, {"name": "אברהם לידר", "id": "327532131", "image": "images/2549033588_20250904_084737.heic"}, {"name": "אליסף מגורי", "id": "212509699", "image": "images/2549037092_20251109_185724.jpg"}, {"name": "יהונתן אברהם דדון", "id": "212174403", "image": "images/2549038743_IMG_5074.jpeg"}, {"name": "מתתיהו לדרמן", "id": "207813288", "image": "images/2549042519_20250825_201232.jpg"}, {"name": "חיים שוורץ", "id": "214378234", "image": "images/2549035479_17579310922542425031441104857143.jpg"}, {"name": "מרדכי בר-טל", "id": "213917743", "image": "images/2549035695_20250822_114852.jpg"}, {"name": "אביאל קדם", "id": "213054711", "image": "images/2549041223_photo_2025-08-19_14-53-47.jpg"}], "תכנות פטור ים": [{"name": "יעקב זיגלבוים", "id": "207897075", "image": "images/2549035581_צילום מסך 2025-12-02 203217.png"}]}, "ירושלים": {"גיאואינט": [{"name": "צביקה קליין", "id": "324138999", "image": "images/2549035657_20240709_075645.heic"}, {"name": "מרדכי מינקוביץ", "id": "323929968", "image": "images/2549037074_20250831_205116.jpg"}, {"name": "נתנאל אייזנבך‬‎", "id": "208830372", "image": "images/2549037019_תמונה כרטיס סטודנט.png"}, {"name": "דוד צבי שפירא", "id": "325525475", "image": "images/2549041131_unnamed 23.jpg"}, {"name": "משה גרבר", "id": "209788793", "image": "images/2549035596_IMG_1966.jpeg"}, {"name": "דוד צבי דיק", "id": "211489489", "image": "images/2549033531_1000352650 1.jpg"}, {"name": "אליהו שהרבני", "id": "206760480", "image": "https://via.placeholder.com/150?text=No+Img"}, {"name": "נתנאל גלובנציץ", "id": "326200409", "image": "images/2549038672_IMG_20250612_213118.jpg"}], "דאטה ושפה": [{"name": "בני קיסטר", "id": "315301564", "image": "images/2549041142_20250813_200345.jpg"}, {"name": "יעקב פרצובסקי", "id": "328115761", "image": "images/2549041130_17569228565664460644205353098255.jpg"}, {"name": "יצחק שופר", "id": "206668386", "image": "images/2549038637_תמונת סטודנט.jpg"}, {"name": "משה אליעזר בלייר", "id": "213351257", "image": "images/2549037154_17561135862085252435229429118383.jpg"}], "תכנות 1 ים": [{"name": "אור רוזין", "id": "318877784", "image": "images/2549033698_20250820_222944.jpg"}, {"name": "אור חיים מנחם בן-טוב", "id": "323787119", "image": "images/2549035723_IMG_3296.jpeg"}, {"name": "יהודה סיונוב", "id": "315208587", "image": "images/2549038787_צילום מסך 2025-12-02 202518.png"}, {"name": "נתן בלדוט", "id": "315244376", "image": "images/2549033568_IMG-20250817-WA0312.jpg"}, {"name": "אלחנן רוזנבלום", "id": "214661456", "image": "images/2549042611_20241028_120639.jpg"}, {"name": "איתיאל אליהו", "id": "213813744", "image": "images/2549038638_e691e4fa-39cb-4d42-a7a2-dc3e54a81665.jpeg"}, {"name": "צבי בלוי", "id": "213088610", "image": "images/2549033560_Screenshot_20250824_143811_WhatsApp.jpg"}, {"name": "יעקב קלוגר", "id": "324953603", "image": "images/2549038779_20250825_215952.jpg"}, {"name": "יהודה ידלר", "id": "315364273", "image": "images/2549038711_20250821_150316.jpg"}, {"name": "משה כהן", "id": "208756270", "image": "images/2549033551_צילום מסך 2025-12-02 202444.png"}, {"name": "מנדי רייניץ", "id": "213358773", "image": "images/2549033567_IMG_6114.jpeg"}, {"name": "אלעזר שדמי", "id": "206593543", "image": "images/2549033538_IMG-20250817-WA0032.jpg"}, {"name": "שילה גרנות", "id": "212055974", "image": "images/2549033494_3P5B8191 copy.jpg"}, {"name": "דוד שטרייכר", "id": "316289891", "image": "images/2549037147_צילום מסך 2025-12-02 202253.png"}, {"name": "שלמה שוב", "id": "214872954", "image": "images/2549042584_42a5ea13-5c15-401d-a70f-d864ace13d56.jpeg"}, {"name": "אהרן וובר", "id": "313282600", "image": "images/2549037146_תמונה 19.8.2024 ב-9.05.jpeg"}, {"name": "אביאל כהן", "id": "207290248", "image": "images/2549036980_17627114174116022721750399776979.jpg"}, {"name": "יואל יוסילביץ'", "id": "325468916", "image": "images/2549036982_תמונת פספורט.jpg"}, {"name": "דוד צבי אוסטרי", "id": "207320565", "image": "images/2549035576_Screenshot_20250817_181718_Samsung Notes.jpg"}, {"name": "יהודה דרמון", "id": "324499359", "image": "images/2549035480_צילום מסך 2025-12-02 202139.png"}, {"name": "יונה משה חיומה", "id": "332336932", "image": "images/2549035481_צילום מסך 2025-12-02 202058.png"}, {"name": "שמחה זיסל סגל", "id": "323058073", "image": "images/2549035538_תמונה לכרטיס.jpg"}, {"name": "אליסף יוסף ויסמן", "id": "209300052", "image": "images/2549035712_file_00000000e5c461f5b304859aa366424a.png"}, {"name": "אביב דרעי", "id": "322461765", "image": "images/2549033548_IMG_20241127_175424.jpg"}, {"name": "יעקב שלזינגר", "id": "213114465", "image": "images/2549041072_צילום מסך 2025-09-03 232421.png"}, {"name": "יעקב זלצמן", "id": "214346033", "image": "images/2549035704_IMG-20250821-WA0058 תמונה.jpg"}, {"name": "יעקב ויזל", "id": "325087658", "image": "images/2549037149_file_000000001b4861f882969830f67d3188.png"}, {"name": "משה גרטנר", "id": "213659196", "image": "images/2549035800_20250325_164956.jpeg"}, {"name": "ראובן פרקל", "id": "214337891", "image": "images/2549041073_gmail_images20250813_172612.jpg"}, {"name": "יצחק ריינר", "id": "324863646", "image": "images/2549033549_ט א.jpg"}, {"name": "אברהם גרוס", "id": "322690470", "image": "images/2549042596_תמונה של WhatsApp 2025-08-17 בשעה 18.40.42_ac19df56.jpg"}, {"name": "יהודה בן דיין", "id": "208059949", "image": "images/2549042647_צילום מסך 2025-12-02 201800.png"}, {"name": "יאיר שרעבי", "id": "314668500", "image": "images/2549042689_WhatsApp Image 2025-11-12 at 17.25.11.jpeg"}], "אלקטרוניקה ים": [{"name": "אריאל אברהם גרינשפן", "id": "214363582", "image": "images/2549038634_20250127_164655.jpg"}, {"name": "יהודה אידלמן", "id": "325238517", "image": "images/2549042714_פנים.PNG"}, {"name": "אהרון סלמון", "id": "324819879", "image": "images/2549042614_IMG-20250909-WA0001.jpg"}, {"name": "אברהם יצחק שקולניק", "id": "315205963", "image": "https://via.placeholder.com/150?text=No+Img"}, {"name": "נתנאל רוזנר", "id": "322590191", "image": "images/2549042531_IMG-20250501-WA0052.jpg"}, {"name": "נח רוס", "id": "332677020", "image": "images/2549033496_20250819_135916.jpg"}, {"name": "יוסף מאיר וינשטוק", "id": "345904809", "image": "images/2549037227_צילום מסך 2025-12-02 202549.png"}, {"name": "שמואל שיינברג", "id": "212412563", "image": "images/2549033544_צילום מסך 2025-12-02 202919.png"}, {"name": "אלישיב פראוי", "id": "325892776", "image": "images/2549038653_Screenshot_20250908-221840_101819.png"}, {"name": "אריה מילצקי", "id": "315174706", "image": "images/2549042642_IMG_7067.jpeg"}, {"name": "יהונתן בלוך", "id": "321561987", "image": "images/2549033539_photo_2025-08-19_14-41-41.jpg"}, {"name": "יעקב אסקוצקי", "id": "213236714", "image": "images/2549042552_IMG_4069.jpeg"}, {"name": "אהרן לזרוביץ", "id": "324219781", "image": "images/2549038597_תמונת סטודנט.JPG"}, {"name": "אברהם ריין", "id": "212044325", "image": "images/2549033562_צילום מסך 2025-12-02 201610.png"}, {"name": "משה גליק", "id": "212368161", "image": "images/2549038778_17557000308953094878452064250857.jpg"}, {"name": "חנניה אייזיקס", "id": "327506945", "image": "images/2549042718_20250826_181410.jpg"}, {"name": "נתנאל פרץ", "id": "328116579", "image": "images/2549038824_IMG_6945.jpeg"}, {"name": "יוסף דוידזון", "id": "326594215", "image": "images/2549038733_17579262109797325362027112028549.jpg"}, {"name": "שלום ספרין", "id": "314818527", "image": "images/2549038636_20250818_145205.jpg"}, {"name": "יהודה אקרמן", "id": "214120354", "image": "images/2549042619_IMG_5703.jpeg"}, {"name": "רפאל כץ", "id": "347532087", "image": "images/2549033462_image.jpg"}, {"name": "משה פלינטנשטיין", "id": "325302537", "image": "images/2549033541_מ פ.jpg"}, {"name": "יוסף חיים נורני", "id": "326038528", "image": "images/2549033614_IMG_20250820_195321.jpg"}, {"name": "שלום מינס", "id": "213205321", "image": "images/2549033423_20250825_184036.jpg"}, {"name": "מרדכי אשכנזי", "id": "211749932", "image": "images/2549033463_20250822_162931.jpg"}, {"name": "אליהו בנימין גור", "id": "314818659", "image": "images/2549042583_1dd8e3d9-c523-41e0-a352-6bed69587d0f.jpeg"}, {"name": "יהודה ידלר", "id": "212365720", "image": "images/2549033594_20250114_141329_2.png"}, {"name": "שלמה משה", "id": "315131706", "image": "images/2549042560_IMG-20250401-WA0008 1.jpg"}], "תכנות 2 ים": [{"name": "נתי קליין", "id": "322244112", "image": "images/2549038675_IMG-20250902-WA0047.jpg"}, {"name": "יהודה חדד", "id": "213689334", "image": "images/2549033593_IMG_9642.jpeg"}, {"name": "שלמה פייט", "id": "315445726", "image": "images/2549035628_photo_2025-08-20_13-48-46.jpg"}, {"name": "ניסים אהרונוב", "id": "329606149", "image": "images/2549038652_20250824_200545.jpg"}, {"name": "אברהם שטרנברג", "id": "322675984", "image": "images/2549033408_IMG_20240428_085221_361.jpg"}, {"name": "אהרון קדר", "id": "212626303", "image": "images/2549037016_צילום מסך 2025-12-02 202215.png"}, {"name": "דניל חברחנוב", "id": "347566739", "image": "images/2549037084_17555073637581359879459011238270.jpg"}, {"name": "עזרא קיסוס", "id": "339810533", "image": "images/2549042517_IMG-20250819-WA0082.jpg"}, {"name": "נתנאל הלר", "id": "325954196", "image": "images/2549037052_Screenshot_20250817_165255_Photos.jpg"}, {"name": "ישראל גוטשטיין", "id": "212217129", "image": "images/2549037148_IMG_20250821_235753.jpg"}, {"name": "לוי יצחק שכטר", "id": "214431371", "image": "images/2549038606_IMG_5411.jpeg"}, {"name": "אהרן פרידמן", "id": "322740259", "image": "images/2549042613_1762774747012291449881357696698.jpg"}, {"name": "שמואל יוסף פרלמן", "id": "214385130", "image": "images/2549037087_foto face.jpg"}, {"name": "יצחק ווינער", "id": "327121620", "image": "images/2549035644_צילום מסך 2025-12-02 203139.png"}, {"name": "אברהם דוד קיפר", "id": "207505819", "image": "images/2549035720_IMG-20250817-WA0018.jpg"}, {"name": "לוי יצחק וולקוב", "id": "209931245", "image": "images/2549036953_20250815_112136.jpg"}, {"name": "דוד מאיר", "id": "206479776", "image": "images/2549035675_20250825_220708.jpg"}, {"name": "שניאור זלמן הרצל", "id": "214189045", "image": "images/2549038688_image.jpg"}, {"name": "משה ברטון", "id": "326131067", "image": "images/2549033613_27064ffc-a3bf-4c03-83b9-62929ba8af1d_20250819_175104_0000.png"}, {"name": "אברהם רפפורט", "id": "213292980", "image": "images/2549035482_17550813346352222122739918083499.jpg"}, {"name": "דוד רובניץ", "id": "325909778", "image": "images/2549037008_IMG_20250816_221045.jpg"}, {"name": "מנחם סודקביץ", "id": "322271214", "image": "images/2549035678_20250815_003210.jpg"}, {"name": "דוד שטרן", "id": "322382722", "image": "images/2549042553_תמונה דוד שטרן.jpg"}, {"name": "ישראל זאב ריינר", "id": "212727390", "image": "images/2549041219_צילום מסך 2025-12-02 202023.png"}, {"name": "אלחנן זאב הלפרין", "id": "325481968", "image": "images/2549033379_20250821_174018.jpg"}, {"name": "יהושע ווייס", "id": "322651563", "image": "images/2549037150_IMG_3908.jpeg"}, {"name": "יעקב גלובר", "id": "345810329", "image": "images/2549035647_IMG_8957.jpg"}, {"name": "אלעזר שור", "id": "207835794", "image": "images/2549036956_IMG-20250828-WA0003.jpg"}, {"name": "שעי'ה שנור", "id": "212312060", "image": "images/2549038657_4.jpg"}, {"name": "אברהם יחיאל ברוכים", "id": "213288061", "image": "images/2549035411_IMG-20250306-WA0070.jpg"}, {"name": "פנחס אקרמן", "id": "214378200", "image": "images/2549042562_WIN_20250414_17_03_06_Pro.jpg"}, {"name": "יונתן אייפרמן", "id": "325735595", "image": "images/2549038709_IMG-20250916-WA0044.jpg"}, {"name": "יאיר בן צור", "id": "211779707", "image": "images/2549035579_YAIR___MIRYAM_34.jpg"}, {"name": "אריאל לוי", "id": "326023215", "image": "images/2549042687_צילום מסך 2025-12-02 201900.png"}, {"name": "מאיר רוכלין", "id": "326057999", "image": "images/2549037068_1756587790034.jpg"}, {"name": "נחמן בורשטיין", "id": "322638693", "image": "images/2549038659_IMG_0340.JPG"}, {"name": "יהודה טמסטט", "id": "770324671", "image": "images/2549035682_image.jpg"}, {"name": "נתן ברנהולץ", "id": "207964537", "image": "images/2549042564_IMG-20250804-WA0057.jpg"}, {"name": "אהרן סלמון", "id": "318750601", "image": "images/2549033561_20250817_163033.jpg"}], "תכנות פטור ים": [{"name": "אורי ישראל לוינשטיין", "id": "325406072", "image": "images/2549042616_IMG_8492.jpeg"}, {"name": "רפאל אוחיון", "id": "207459512", "image": "images/2549042719_כרטיס סטודנט.jpg"}, {"name": "איתן מלכה", "id": "214984288", "image": "https://via.placeholder.com/150?text=No+Img"}, {"name": "אלי מרמלשטיין", "id": "347663684", "image": "images/2549042627_IMG_4863.jpeg"}, {"name": "אהרון פרל", "id": "212043483", "image": "images/2549033536_20250818_105228.jpg"}, {"name": "אלחנן שטראוס", "id": "214942872", "image": "images/2549037051_IMG_3292.jpeg"}, {"name": "הלל חדד", "id": "329676183", "image": "images/2549041071_image.jpg"}, {"name": "אלעזר קאפלין", "id": "325585826", "image": "images/2549033633_IMG_8175.jpeg"}, {"name": "הלל אהרוני", "id": "325444164", "image": "images/2549038706_IMG_20251109_134638.jpg"}, {"name": "מיכאל שלוש", "id": "347533747", "image": "images/2549041092_WhatsApp Image 2025-08-25 at 8.21.26 PM 1.jpeg"}], "רשתות": [{"name": "יוסף שקלים", "id": "328175419", "image": "images/2549033447_17627162257307879114335425550258.jpg"}], "תכנות": [{"name": "הלל קדר", "id": "325573491", "image": "images/2549035485_Untitled design.png"}], "תכנות דרום": [{"name": "משה פוגל", "id": "213361066", "image": "images/2549035594_צילום מסך 2025-12-02 184431.png"}]}, "כללי": {"תכנות פטור ים": [{"name": "רון משה אסוס", "id": "347740219", "image": "images/2549038658_IMG_20251109_135216.jpg"}]}};
+            const data = {"פתח תקוה": {"גיאואינט": [{"name": "איתמר עדני", "id": "325548766", "image": "images/2549041224_IMG-20250817-WA0141.jpg"}, {"name": "בניהו מלכה", "id": "211885058", "image": "images/2549037093_IMG_20250326_114945_562 1.jpg"}, {"name": "אריאל עמירה", "id": "325037935", "image": "images/2549035715_צילום מסך 2025-12-02 201226.png"}, {"name": "ישראל אליאך", "id": "208091512", "image": "images/2549037091_IMG_5864.jpeg"}, {"name": "ארי רוט", "id": "326375763", "image": "images/2549041157_563de6d9-4801-4c94-b35c-e5e64063aa07.jpeg"}, {"name": "נתנאל זילברמן", "id": "314622796", "image": "images/2549033413_IMG_6049.jpeg"}, {"name": "ידידיה קריסטל", "id": "326593118", "image": "images/2549042715_תמונת פספורט ידידיה.jpeg"}, {"name": "אריה כהן", "id": "213291511", "image": "images/2549037071_20250827_202023.heic"}], "ללא מגמה": [{"name": "יוסי ויסברג", "id": "323806554", "image": "images/2549035698_פספורט.jpg"}], "תכנות 2 פת": [{"name": "אלעזר ערנטרוי", "id": "315640169", "image": "images/2549037069_צילום מסך 2025-12-02 201426.png"}, {"name": "יהונתן קובי", "id": "212402283", "image": "images/2549041145_20250819_123043.jpg"}, {"name": "שמעון כהן", "id": "214684037", "image": "images/2549042557_Screenshot_20250818_142506_Gallery.jpg"}, {"name": "איציק פרידמן", "id": "214992513", "image": "images/2549038710_20250808_085327.jpg"}, {"name": "אלעזר קראוס", "id": "325153526", "image": "images/2549042688_IMG-20240108-WA0030.jpg"}, {"name": "ראובן רוזן", "id": "227369451", "image": "images/2549033556_image.jpg"}, {"name": "אשר פירוב", "id": "323816587", "image": "images/2549037002_אשר פירוב.png"}, {"name": "אריה טולנפלד", "id": "325554368", "image": "images/2549038640_20250831_232842.jpg"}, {"name": "מנחם כהן", "id": "315602011", "image": "images/2549037085_תמונה.jpg"}, {"name": "דוד בן שושן", "id": "326618444", "image": "images/2549035629_IMG_1987.jpeg"}, {"name": "שילה וקסלר", "id": "324825538", "image": "images/2549038554_IMG_3800.jpeg"}, {"name": "מרדכי פסח", "id": "209560622", "image": "images/2549038654_17567501263157312177652076608661.jpg"}, {"name": "סער שמואל אפרת", "id": "325375293", "image": "images/2549035783_20250813_122531.jpg"}, {"name": "בני דושינסקי", "id": "214597155", "image": "images/2549041069_בני.jpg"}, {"name": "מאיר לבייב", "id": "326668639", "image": "images/2549036955_1122.jpg"}, {"name": "יעקב ברנט", "id": "212222202", "image": "images/2549035796_IMG-20250831-WA0083.jpg"}, {"name": "מאיר זילברמן", "id": "212729099", "image": "images/2549041141_20250820_080252.jpg"}, {"name": "אושי פיליפ", "id": "213496573", "image": "images/2549037007_WIN_20250813_07_34_30_Pro.jpg"}, {"name": "יעקב קורלנסקי", "id": "212129068", "image": "images/2549035676_20250821_173134.jpg"}, {"name": "שלומי חי שרגא", "id": "316528140", "image": "images/2549035711_20250902_070755.jpg"}, {"name": "יוסי שלאס", "id": "314886086", "image": "images/2549041221_פספורט.JPG"}, {"name": "דוד רובינשטיין", "id": "324252758", "image": "images/2549035798_תמונת פרופיל.jpg"}, {"name": "בנימין אבוטבול", "id": "214377392", "image": "images/2549035578_צילום מסך 2025-12-02 203008.png"}, {"name": "מרדכי כהן הלפרין", "id": "212120109", "image": "images/2549035412_20250820_195148.jpg"}, {"name": "שמשי פדר", "id": "318673027", "image": "images/2549035684_תמונת פרופיל.jpg"}, {"name": "משה יעקב זילבר", "id": "322929761", "image": "images/2549035706_IMG-20250915-WA0057.jpg"}, {"name": "אברהם אלמליח", "id": "213120397", "image": "images/2549037152_20250825_195528.heic"}, {"name": "שמעון אברמציוב", "id": "325449064", "image": "images/2549035582_image.jpg"}, {"name": "אפרים שישו", "id": "326638566", "image": "images/2549037067_image.jpg"}, {"name": "אהרן גרינברגר", "id": "214715351", "image": "images/2549035683_20250818_002502.jpg"}, {"name": "מנחם גלנצברג", "id": "215068529", "image": "https://cdn-icons-png.flaticon.com/512/847/847969.png"}], "דאטה ושפה": [{"name": "אברהם רוזנברג", "id": "212401871", "image": "images/2549036967_Screenshot_20250916-011357_Gallery.jpg"}, {"name": "יוסף רודרמן", "id": "315239707", "image": "images/2549035685_IMG_3447.jpeg"}, {"name": "נהוראי גואטה", "id": "322433350", "image": "images/2549035580_IMG_20250828_143023934.jpg"}], "אלקטרוניקה פת": [{"name": "אליהו בשארי", "id": "315242982", "image": "images/2549033422_20250818_152225.jpg"}, {"name": "אליהו סרור", "id": "325751329", "image": "images/2549042523_IMG_6879.jpeg"}, {"name": "אבישי מאיר והב", "id": "212816912", "image": "images/2549042646_צילום מסך 2025-12-02 204145.png"}, {"name": "דוד נחום", "id": "322318932", "image": "images/2549042561_IMG_20251005_003953.jpg"}, {"name": "ישראל מאיר מזרחי", "id": "326041704", "image": "images/2549033529_20250916_093717.jpg"}, {"name": "משה כהן", "id": "323054841", "image": "images/2549033674_Screenshot_20250814_022016_Gallery.jpg"}, {"name": "נפתלי צבי יהודה ברלין", "id": "207294976", "image": "images/2549038694_IMG-20241230-WA00691.jpg"}, {"name": "איציק בורנשטיין", "id": "212758908", "image": "images/2549038676_20250821_172413.heic"}, {"name": "ישראל אלבז", "id": "215126236", "image": "images/2549038805_20250828_1814591.jpg"}, {"name": "אריאל וייסנשטרן", "id": "325561520", "image": "images/2549038784_20250831_003017.jpg"}, {"name": "יהונתן לוי", "id": "213140387", "image": "images/2549033530_20251109_165417.jpg"}, {"name": "אלחנן לוי שכטר", "id": "318786282", "image": "images/2549033660_תמונה אלחנן.jpg"}, {"name": "יעקב דייטש", "id": "327755005", "image": "images/2549042620_20250813_190127.jpg"}, {"name": "שמעון יעקובוב", "id": "313244790", "image": "images/2549033376_unnamed.jpg"}, {"name": "נחום דיקמן", "id": "213277171", "image": "images/2549042599_1002667457.jpg"}], "אלקטרוניקה ים": [{"name": "יוסף לוי", "id": "212961809", "image": "images/2549038737_17579285631937920901456925106726.jpg"}], "תכנות 1 פת": [{"name": "יעקב שלום נוילנדר", "id": "211594502", "image": "images/2549033669_image.jpg"}, {"name": "ישראל בירנברג", "id": "322446261", "image": "images/2549042563_IMG-20250915-WA0263.jpg"}, {"name": "ישראל משה קוביטשוק", "id": "213427883", "image": "images/2549033380_20250828_224335.jpg"}, {"name": "משה חריטן", "id": "214339822", "image": "images/2549037144_image.jpg"}, {"name": "אהרון קצבורג", "id": "322682246", "image": "images/2549033497_IMG-20250820-WA0081.jpg"}, {"name": "שמואל הורביץ", "id": "214378820", "image": "images/2549041066_IMG-20250818-WA0116.jpg"}, {"name": "שלמה וקסמן", "id": "326001591", "image": "images/2549035645_IMG-20250821-WA0015.jpg"}, {"name": "אלי טסלר", "id": "207647629", "image": "images/2549041151_צילום מסך 2025-12-02 202345.png"}, {"name": "אשר צבי פלדמן", "id": "211431069", "image": "images/2549038655_image.jpg"}, {"name": "אברהם רוזנגרטן", "id": "315857318", "image": "images/2549037003_image.jpg"}, {"name": "יצחק אייזק גליק", "id": "213877301", "image": "images/2549038656_תמונה לכרטיס סטודנט.jpg"}, {"name": "מנחם אמיתי", "id": "213897697", "image": "images/2549041118_IMG_5950.jpeg"}, {"name": "אלעזר אלטמן", "id": "213928401", "image": "images/2549038782_20250806_1909171.jpg"}, {"name": "דוד מקלב", "id": "209303155", "image": "images/2549041218_20250817_171046.jpg"}, {"name": "חזקי ארנפלד", "id": "327531331", "image": "images/2549037294_IMG-20250821-WA0196.jpg"}, {"name": "אברהם איצקוביץ", "id": "214180242", "image": "images/2549035646_תמונה פספורט.JPG"}, {"name": "יעקב אוחיון", "id": "208891580", "image": "images/2549035677_IMG-20250813-WA0248.jpg"}, {"name": "שלמה ברוך נויפלד", "id": "322593807", "image": "images/2549041154_SIMSd620005_0002.jpg"}, {"name": "נתי ליאני", "id": "315548693", "image": "images/2549037065_IMG_7457.jpeg"}, {"name": "חיים יהודי", "id": "214434995", "image": "images/2549041128_20250821_235603.jpg"}, {"name": "חיים מילר", "id": "326617107", "image": "images/2549038557_WIN_20250831_19_16_56_Pro.jpg"}, {"name": "נתנאל בן זקן", "id": "324151414", "image": "images/2549035537_תמונה.pdf"}, {"name": "נהוראי מגורי", "id": "324953447", "image": "images/2549037291_IMG_3240.png"}, {"name": "ישראל משה ברמינקה", "id": "325019081", "image": "images/2549035799_20250506_10431811.jpg"}, {"name": "אהרון רבהון", "id": "211769187", "image": "images/2549035703_20250820_185247.png"}, {"name": "חיים יעקבסון", "id": "213396039", "image": "images/2549037290_צילום מסך 2025-12-02 203042.png"}, {"name": "נתנאל מליחי", "id": "315162099", "image": "images/2549033673_17557159604633373023101059013953.jpg"}, {"name": "דוד ימין", "id": "325959609", "image": "images/2549037089_Screenshot_20250831_092516_Gallery.jpg"}, {"name": "שמואל צבי קובלסקי", "id": "316334424", "image": "images/2549033634_image.jpg"}], "רשתות": [{"name": "אהרון אייזיק וייסמן", "id": "207142423", "image": "images/2549038670_17566680695027644326595349720279.jpg"}], "תכנות פטור פת": [{"name": "נתנאל קאפלין", "id": "325134666", "image": "images/2549038713_IMG_9786.jpeg"}, {"name": "שמחה קופרמן", "id": "212036511", "image": "images/2549038594_20250817_213710.jpg"}, {"name": "אבי קליין", "id": "323011379", "image": "images/2549041117_צילום מסך 2025-12-02 201711.png"}, {"name": "מאיר הולצר", "id": "208463869", "image": "images/2549042521_20250820_234615.jpg"}, {"name": "יצחק רובין", "id": "206913956", "image": "images/2549033424_תמונה.jpeg"}, {"name": "יעקב גרינבוים", "id": "324240860", "image": "images/2549036954_תמונת פספורט.jpg"}, {"name": "אברהם לידר", "id": "327532131", "image": "images/2549033588_20250904_084737.heic"}, {"name": "אליסף מגורי", "id": "212509699", "image": "images/2549037092_20251109_185724.jpg"}, {"name": "יהונתן אברהם דדון", "id": "212174403", "image": "images/2549038743_IMG_5074.jpeg"}, {"name": "מתתיהו לדרמן", "id": "207813288", "image": "images/2549042519_20250825_201232.jpg"}, {"name": "חיים שוורץ", "id": "214378234", "image": "images/2549035479_17579310922542425031441104857143.jpg"}, {"name": "מרדכי בר-טל", "id": "213917743", "image": "images/2549035695_20250822_114852.jpg"}, {"name": "אביאל קדם", "id": "213054711", "image": "images/2549041223_photo_2025-08-19_14-53-47.jpg"}], "תכנות פטור ים": [{"name": "יעקב זיגלבוים", "id": "207897075", "image": "images/2549035581_צילום מסך 2025-12-02 203217.png"}]}, "ירושלים": {"גיאואינט": [{"name": "צביקה קליין", "id": "324138999", "image": "images/2549035657_20240709_075645.heic"}, {"name": "מרדכי מינקוביץ", "id": "323929968", "image": "images/2549037074_20250831_205116.jpg"}, {"name": "נתנאל אייזנבך‬‎", "id": "208830372", "image": "images/2549037019_תמונה כרטיס סטודנט.png"}, {"name": "דוד צבי שפירא", "id": "325525475", "image": "images/2549041131_unnamed 23.jpg"}, {"name": "משה גרבר", "id": "209788793", "image": "images/2549035596_IMG_1966.jpeg"}, {"name": "דוד צבי דיק", "id": "211489489", "image": "images/2549033531_1000352650 1.jpg"}, {"name": "אליהו שהרבני", "id": "206760480", "image": "https://cdn-icons-png.flaticon.com/512/847/847969.png"}, {"name": "נתנאל גלובנציץ", "id": "326200409", "image": "images/2549038672_IMG_20250612_213118.jpg"}], "דאטה ושפה": [{"name": "בני קיסטר", "id": "315301564", "image": "images/2549041142_20250813_200345.jpg"}, {"name": "יעקב פרצובסקי", "id": "328115761", "image": "images/2549041130_17569228565664460644205353098255.jpg"}, {"name": "יצחק שופר", "id": "206668386", "image": "images/2549038637_תמונת סטודנט.jpg"}, {"name": "משה אליעזר בלייר", "id": "213351257", "image": "images/2549037154_17561135862085252435229429118383.jpg"}], "תכנות 1 ים": [{"name": "אור רוזין", "id": "318877784", "image": "images/2549033698_20250820_222944.jpg"}, {"name": "אור חיים מנחם בן-טוב", "id": "323787119", "image": "images/2549035723_IMG_3296.jpeg"}, {"name": "יהודה סיונוב", "id": "315208587", "image": "images/2549038787_צילום מסך 2025-12-02 202518.png"}, {"name": "נתן בלדוט", "id": "315244376", "image": "images/2549033568_IMG-20250817-WA0312.jpg"}, {"name": "אלחנן רוזנבלום", "id": "214661456", "image": "images/2549042611_20241028_120639.jpg"}, {"name": "איתיאל אליהו", "id": "213813744", "image": "images/2549038638_e691e4fa-39cb-4d42-a7a2-dc3e54a81665.jpeg"}, {"name": "צבי בלוי", "id": "213088610", "image": "images/2549033560_Screenshot_20250824_143811_WhatsApp.jpg"}, {"name": "יעקב קלוגר", "id": "324953603", "image": "images/2549038779_20250825_215952.jpg"}, {"name": "יהודה ידלר", "id": "315364273", "image": "images/2549038711_20250821_150316.jpg"}, {"name": "משה כהן", "id": "208756270", "image": "images/2549033551_צילום מסך 2025-12-02 202444.png"}, {"name": "מנדי רייניץ", "id": "213358773", "image": "images/2549033567_IMG_6114.jpeg"}, {"name": "אלעזר שדמי", "id": "206593543", "image": "images/2549033538_IMG-20250817-WA0032.jpg"}, {"name": "שילה גרנות", "id": "212055974", "image": "images/2549033494_3P5B8191 copy.jpg"}, {"name": "דוד שטרייכר", "id": "316289891", "image": "images/2549037147_צילום מסך 2025-12-02 202253.png"}, {"name": "שלמה שוב", "id": "214872954", "image": "images/2549042584_42a5ea13-5c15-401d-a70f-d864ace13d56.jpeg"}, {"name": "אהרן וובר", "id": "313282600", "image": "images/2549037146_תמונה 19.8.2024 ב-9.05.jpeg"}, {"name": "אביאל כהן", "id": "207290248", "image": "images/2549036980_17627114174116022721750399776979.jpg"}, {"name": "יואל יוסילביץ'", "id": "325468916", "image": "images/2549036982_תמונת פספורט.jpg"}, {"name": "דוד צבי אוסטרי", "id": "207320565", "image": "images/2549035576_Screenshot_20250817_181718_Samsung Notes.jpg"}, {"name": "יהודה דרמון", "id": "324499359", "image": "images/2549035480_צילום מסך 2025-12-02 202139.png"}, {"name": "יונה משה חיומה", "id": "332336932", "image": "images/2549035481_צילום מסך 2025-12-02 202058.png"}, {"name": "שמחה זיסל סגל", "id": "323058073", "image": "images/2549035538_תמונה לכרטיס.jpg"}, {"name": "אליסף יוסף ויסמן", "id": "209300052", "image": "images/2549035712_file_00000000e5c461f5b304859aa366424a.png"}, {"name": "אביב דרעי", "id": "322461765", "image": "images/2549033548_IMG_20241127_175424.jpg"}, {"name": "יעקב שלזינגר", "id": "213114465", "image": "images/2549041072_צילום מסך 2025-09-03 232421.png"}, {"name": "יעקב זלצמן", "id": "214346033", "image": "images/2549035704_IMG-20250821-WA0058 תמונה.jpg"}, {"name": "יעקב ויזל", "id": "325087658", "image": "images/2549037149_file_000000001b4861f882969830f67d3188.png"}, {"name": "משה גרטנר", "id": "213659196", "image": "images/2549035800_20250325_164956.jpeg"}, {"name": "ראובן פרקל", "id": "214337891", "image": "images/2549041073_gmail_images20250813_172612.jpg"}, {"name": "יצחק ריינר", "id": "324863646", "image": "images/2549033549_ט א.jpg"}, {"name": "אברהם גרוס", "id": "322690470", "image": "images/2549042596_תמונה של WhatsApp 2025-08-17 בשעה 18.40.42_ac19df56.jpg"}, {"name": "יהודה בן דיין", "id": "208059949", "image": "images/2549042647_צילום מסך 2025-12-02 201800.png"}, {"name": "יאיר שרעבי", "id": "314668500", "image": "images/2549042689_WhatsApp Image 2025-11-12 at 17.25.11.jpeg"}], "אלקטרוניקה ים": [{"name": "אריאל אברהם גרינשפן", "id": "214363582", "image": "images/2549038634_20250127_164655.jpg"}, {"name": "יהודה אידלמן", "id": "325238517", "image": "images/2549042714_פנים.PNG"}, {"name": "אהרון סלמון", "id": "324819879", "image": "images/2549042614_IMG-20250909-WA0001.jpg"}, {"name": "אברהם יצחק שקולניק", "id": "315205963", "image": "https://cdn-icons-png.flaticon.com/512/847/847969.png"}, {"name": "נתנאל רוזנר", "id": "322590191", "image": "images/2549042531_IMG-20250501-WA0052.jpg"}, {"name": "נח רוס", "id": "332677020", "image": "images/2549033496_20250819_135916.jpg"}, {"name": "יוסף מאיר וינשטוק", "id": "345904809", "image": "images/2549037227_צילום מסך 2025-12-02 202549.png"}, {"name": "שמואל שיינברג", "id": "212412563", "image": "images/2549033544_צילום מסך 2025-12-02 202919.png"}, {"name": "אלישיב פראוי", "id": "325892776", "image": "images/2549038653_Screenshot_20250908-221840_101819.png"}, {"name": "אריה מילצקי", "id": "315174706", "image": "images/2549042642_IMG_7067.jpeg"}, {"name": "יהונתן בלוך", "id": "321561987", "image": "images/2549033539_photo_2025-08-19_14-41-41.jpg"}, {"name": "יעקב אסקוצקי", "id": "213236714", "image": "images/2549042552_IMG_4069.jpeg"}, {"name": "אהרן לזרוביץ", "id": "324219781", "image": "images/2549038597_תמונת סטודנט.JPG"}, {"name": "אברהם ריין", "id": "212044325", "image": "images/2549033562_צילום מסך 2025-12-02 201610.png"}, {"name": "משה גליק", "id": "212368161", "image": "images/2549038778_17557000308953094878452064250857.jpg"}, {"name": "חנניה אייזיקס", "id": "327506945", "image": "images/2549042718_20250826_181410.jpg"}, {"name": "נתנאל פרץ", "id": "328116579", "image": "images/2549038824_IMG_6945.jpeg"}, {"name": "יוסף דוידזון", "id": "326594215", "image": "images/2549038733_17579262109797325362027112028549.jpg"}, {"name": "שלום ספרין", "id": "314818527", "image": "images/2549038636_20250818_145205.jpg"}, {"name": "יהודה אקרמן", "id": "214120354", "image": "images/2549042619_IMG_5703.jpeg"}, {"name": "רפאל כץ", "id": "347532087", "image": "images/2549033462_image.jpg"}, {"name": "משה פלינטנשטיין", "id": "325302537", "image": "images/2549033541_מ פ.jpg"}, {"name": "יוסף חיים נורני", "id": "326038528", "image": "images/2549033614_IMG_20250820_195321.jpg"}, {"name": "שלום מינס", "id": "213205321", "image": "images/2549033423_20250825_184036.jpg"}, {"name": "מרדכי אשכנזי", "id": "211749932", "image": "images/2549033463_20250822_162931.jpg"}, {"name": "אליהו בנימין גור", "id": "314818659", "image": "images/2549042583_1dd8e3d9-c523-41e0-a352-6bed69587d0f.jpeg"}, {"name": "יהודה ידלר", "id": "212365720", "image": "images/2549033594_20250114_141329_2.png"}, {"name": "שלמה משה", "id": "315131706", "image": "images/2549042560_IMG-20250401-WA0008 1.jpg"}], "תכנות 2 ים": [{"name": "נתי קליין", "id": "322244112", "image": "images/2549038675_IMG-20250902-WA0047.jpg"}, {"name": "יהודה חדד", "id": "213689334", "image": "images/2549033593_IMG_9642.jpeg"}, {"name": "שלמה פייט", "id": "315445726", "image": "images/2549035628_photo_2025-08-20_13-48-46.jpg"}, {"name": "ניסים אהרונוב", "id": "329606149", "image": "images/2549038652_20250824_200545.jpg"}, {"name": "אברהם שטרנברג", "id": "322675984", "image": "images/2549033408_IMG_20240428_085221_361.jpg"}, {"name": "אהרון קדר", "id": "212626303", "image": "images/2549037016_צילום מסך 2025-12-02 202215.png"}, {"name": "דניל חברחנוב", "id": "347566739", "image": "images/2549037084_17555073637581359879459011238270.jpg"}, {"name": "עזרא קיסוס", "id": "339810533", "image": "images/2549042517_IMG-20250819-WA0082.jpg"}, {"name": "נתנאל הלר", "id": "325954196", "image": "images/2549037052_Screenshot_20250817_165255_Photos.jpg"}, {"name": "ישראל גוטשטיין", "id": "212217129", "image": "images/2549037148_IMG_20250821_235753.jpg"}, {"name": "לוי יצחק שכטר", "id": "214431371", "image": "images/2549038606_IMG_5411.jpeg"}, {"name": "אהרן פרידמן", "id": "322740259", "image": "images/2549042613_1762774747012291449881357696698.jpg"}, {"name": "שמואל יוסף פרלמן", "id": "214385130", "image": "images/2549037087_foto face.jpg"}, {"name": "יצחק ווינער", "id": "327121620", "image": "images/2549035644_צילום מסך 2025-12-02 203139.png"}, {"name": "אברהם דוד קיפר", "id": "207505819", "image": "images/2549035720_IMG-20250817-WA0018.jpg"}, {"name": "לוי יצחק וולקוב", "id": "209931245", "image": "images/2549036953_20250815_112136.jpg"}, {"name": "דוד מאיר", "id": "206479776", "image": "images/2549035675_20250825_220708.jpg"}, {"name": "שניאור זלמן הרצל", "id": "214189045", "image": "images/2549038688_image.jpg"}, {"name": "משה ברטון", "id": "326131067", "image": "images/2549033613_27064ffc-a3bf-4c03-83b9-62929ba8af1d_20250819_175104_0000.png"}, {"name": "אברהם רפפורט", "id": "213292980", "image": "images/2549035482_17550813346352222122739918083499.jpg"}, {"name": "דוד רובניץ", "id": "325909778", "image": "images/2549037008_IMG_20250816_221045.jpg"}, {"name": "מנחם סודקביץ", "id": "322271214", "image": "images/2549035678_20250815_003210.jpg"}, {"name": "דוד שטרן", "id": "322382722", "image": "images/2549042553_תמונה דוד שטרן.jpg"}, {"name": "ישראל זאב ריינר", "id": "212727390", "image": "images/2549041219_צילום מסך 2025-12-02 202023.png"}, {"name": "אלחנן זאב הלפרין", "id": "325481968", "image": "images/2549033379_20250821_174018.jpg"}, {"name": "יהושע ווייס", "id": "322651563", "image": "images/2549037150_IMG_3908.jpeg"}, {"name": "יעקב גלובר", "id": "345810329", "image": "images/2549035647_IMG_8957.jpg"}, {"name": "אלעזר שור", "id": "207835794", "image": "images/2549036956_IMG-20250828-WA0003.jpg"}, {"name": "שעי'ה שנור", "id": "212312060", "image": "images/2549038657_4.jpg"}, {"name": "אברהם יחיאל ברוכים", "id": "213288061", "image": "images/2549035411_IMG-20250306-WA0070.jpg"}, {"name": "פנחס אקרמן", "id": "214378200", "image": "images/2549042562_WIN_20250414_17_03_06_Pro.jpg"}, {"name": "יונתן אייפרמן", "id": "325735595", "image": "images/2549038709_IMG-20250916-WA0044.jpg"}, {"name": "יאיר בן צור", "id": "211779707", "image": "images/2549035579_YAIR___MIRYAM_34.jpg"}, {"name": "אריאל לוי", "id": "326023215", "image": "images/2549042687_צילום מסך 2025-12-02 201900.png"}, {"name": "מאיר רוכלין", "id": "326057999", "image": "images/2549037068_1756587790034.jpg"}, {"name": "נחמן בורשטיין", "id": "322638693", "image": "images/2549038659_IMG_0340.JPG"}, {"name": "יהודה טמסטט", "id": "770324671", "image": "images/2549035682_image.jpg"}, {"name": "נתן ברנהולץ", "id": "207964537", "image": "images/2549042564_IMG-20250804-WA0057.jpg"}, {"name": "אהרן סלמון", "id": "318750601", "image": "images/2549033561_20250817_163033.jpg"}], "תכנות פטור ים": [{"name": "אורי ישראל לוינשטיין", "id": "325406072", "image": "images/2549042616_IMG_8492.jpeg"}, {"name": "רפאל אוחיון", "id": "207459512", "image": "images/2549042719_כרטיס סטודנט.jpg"}, {"name": "איתן מלכה", "id": "214984288", "image": "https://cdn-icons-png.flaticon.com/512/847/847969.png"}, {"name": "אלי מרמלשטיין", "id": "347663684", "image": "images/2549042627_IMG_4863.jpeg"}, {"name": "אהרון פרל", "id": "212043483", "image": "images/2549033536_20250818_105228.jpg"}, {"name": "אלחנן שטראוס", "id": "214942872", "image": "images/2549037051_IMG_3292.jpeg"}, {"name": "הלל חדד", "id": "329676183", "image": "images/2549041071_image.jpg"}, {"name": "אלעזר קאפלין", "id": "325585826", "image": "images/2549033633_IMG_8175.jpeg"}, {"name": "הלל אהרוני", "id": "325444164", "image": "images/2549038706_IMG_20251109_134638.jpg"}, {"name": "מיכאל שלוש", "id": "347533747", "image": "images/2549041092_WhatsApp Image 2025-08-25 at 8.21.26 PM 1.jpeg"}], "רשתות": [{"name": "יוסף שקלים", "id": "328175419", "image": "images/2549033447_17627162257307879114335425550258.jpg"}], "תכנות": [{"name": "הלל קדר", "id": "325573491", "image": "images/2549035485_Untitled design.png"}], "תכנות דרום": [{"name": "משה פוגל", "id": "213361066", "image": "images/2549035594_צילום מסך 2025-12-02 184431.png"}]}, "כללי": {"תכנות פטור ים": [{"name": "רון משה אסוס", "id": "347740219", "image": "images/2549038658_IMG_20251109_135216.jpg"}]}};
             const criteria = ["רמת מוטיבציה", "עמידה בנהלים", "קבלת סמכות", "הבנת חומר הלימוד", "שואל שאלות הבנה", "יכולת למידה עצמית", "סקרנות", "יכולת לקבל ביקורת", "מגדיל ראש", "דירוג ביחס לכיתה"];
 
             const branchSel = document.getElementById('branchSelect');
@@ -121,10 +168,9 @@
 
             function loadMegama() {
                 const branch = branchSel.value;
-                classSel.innerHTML = '<option value="">🎓 בחר מגמה...</option>';
+                classSel.innerHTML = '<option value="">בחר מגמה...</option>';
                 classSel.disabled = true;
                 downloadBtn.classList.add('hidden');
-                container.innerHTML = '<div style="text-align:center; padding:20px;">נא לבחור מגמה</div>';
 
                 if (branch && data[branch]) {
                     Object.keys(data[branch]).sort().forEach(m => classSel.add(new Option(m, m)));
@@ -139,41 +185,57 @@
 
                 if (!branch || !megama) return;
 
-                downloadBtn.classList.remove('hidden'); 
+                downloadBtn.classList.remove('hidden');
                 const students = data[branch][megama];
                 students.sort((a, b) => a.name.localeCompare(b.name));
 
                 students.forEach(st => {
                     const noteKey = `note_${st.id}`;
-                    const hasNote = localStorage.getItem(noteKey);
 
-                    let criteriaHtml = '<div class="rating-section">';
+                    let criteriaHtml = '<div class="criteria-grid">';
                     criteria.forEach((crit, idx) => {
                         const radioName = `rate_${st.id}_${idx}`;
                         let options = '';
                         for (let i = 1; i <= 6; i++) {
-                            options += `<label class="radio-group"><input type="radio" name="${radioName}" value="${i}" onchange="save(this, '${st.id}')"><span class="circle-btn">${i}</span></label>`;
+                            options += `
+                                <label class="radio-label">
+                                    <input type="radio" name="${radioName}" value="${i}" onchange="save(this, '${st.id}')">
+                                    <div class="radio-box">${i}</div>
+                                </label>`;
                         }
-                        options += `<label class="radio-group"><input type="radio" name="${radioName}" value="NA" onchange="save(this, '${st.id}')"><span class="circle-btn na-btn">לא נמדד</span></label>`;
-                        criteriaHtml += `<div class="rating-row"><span class="rating-label">${crit}</span><div class="rating-options">${options}</div></div>`;
+                        options += `
+                            <label class="radio-label">
+                                <input type="radio" name="${radioName}" value="NA" onchange="save(this, '${st.id}')">
+                                <div class="radio-box na-btn">לא נמדד</div>
+                            </label>`;
+
+                        criteriaHtml += `<div class="criteria-item"><span class="criteria-label">${crit}</span><div class="rating-options">${options}</div></div>`;
                     });
                     criteriaHtml += '</div>';
 
+                    // בדיקת סטטוס מילוי
+                    const hasNote = localStorage.getItem(noteKey);
+                    const filledClass = hasNote ? 'filled' : '';
+
                     container.insertAdjacentHTML('beforeend', `
-                        <div class="student-card ${hasNote ? 'filled' : ''}" id="card_${st.id}">
+                        <div class="student-card ${filledClass}" id="card_${st.id}">
                             <div class="card-header">
-                                <img src="${st.image}" class="student-img" loading="lazy" onerror="this.src='https://via.placeholder.com/70?text=No+Img'">
-                                <div class="info"><h3>${st.name}</h3><p>${st.id}</p></div>
+                                <img src="${st.image}" class="student-img">
+                                <div>
+                                    <h3 style="margin:0">${st.name}</h3>
+                                    <span style="color:#777; font-size:0.9rem">ת.ז: ${st.id}</span>
+                                </div>
+                                <div class="status-badge">✓ הושלם</div>
                             </div>
                             ${criteriaHtml}
-                            <div class="note-area">
-                                <textarea id="${noteKey}" placeholder="הערה כללית..." oninput="save(this, '${st.id}')"></textarea>
+                            <div class="notes-section">
+                                <textarea id="${noteKey}" placeholder="כתוב הערה כאן..." oninput="save(this, '${st.id}')"></textarea>
                             </div>
                         </div>
                     `);
 
-                    // שחזור
-                    if (localStorage.getItem(noteKey)) document.getElementById(noteKey).value = localStorage.getItem(noteKey);
+                    // שחזור נתונים
+                    if (hasNote) document.getElementById(noteKey).value = hasNote;
                     criteria.forEach((_, idx) => {
                         const rName = `rate_${st.id}_${idx}`;
                         const val = localStorage.getItem(rName);
@@ -187,60 +249,29 @@
 
             function save(el, id) {
                 localStorage.setItem(el.name || el.id, el.value);
-                const card = document.getElementById('card_' + id);
-                card.classList.add('filled');
+                document.getElementById('card_' + id).classList.add('filled');
             }
 
-            // --- הפונקציה ליצירת אקסל ---
             function downloadExcel() {
                 const branch = branchSel.value;
                 const megama = classSel.value;
                 const students = data[branch][megama];
-
-                // הכנת הנתונים לאקסל
-                const excelRows = [];
+                const rows = [];
 
                 students.forEach(st => {
-                    // בדיקה האם יש מידע על התלמיד
-                    let hasData = false;
-
-                    // אובייקט בסיס לשורה
-                    const row = {
-                        "שם התלמיד": st.name,
-                        "תעודת זהות": st.id,
-                        "סניף": branch,
-                        "מגמה": megama
-                    };
-
-                    // הוספת הציונים
+                    const row = { "שם": st.name, "תז": st.id, "סניף": branch, "מגמה": megama };
                     criteria.forEach((crit, idx) => {
-                        const val = localStorage.getItem(`rate_${st.id}_${idx}`);
-                        row[crit] = val ? val : ""; // אם אין ציון שים ריק
-                        if (val) hasData = true;
+                        row[crit] = localStorage.getItem(`rate_${st.id}_${idx}`) || "";
                     });
-
-                    // הוספת הערה
-                    const note = localStorage.getItem(`note_${st.id}`);
-                    row["הערות"] = note ? note : "";
-                    if (note) hasData = true;
-
-                    // הוספה לאקסל רק אם יש מידע (או שרוצים את כולם בכל מקרה - כרגע הוספתי את כולם)
-                    excelRows.push(row);
+                    row["הערות"] = localStorage.getItem(`note_${st.id}`) || "";
+                    rows.push(row);
                 });
 
-                if (excelRows.length === 0) {
-                    alert("אין נתונים להורדה.");
-                    return;
-                }
-
-                // יצירת גליון עבודה
-                const ws = XLSX.utils.json_to_sheet(excelRows);
+                if(!rows.length) return alert("אין נתונים");
+                const ws = XLSX.utils.json_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "דוח הערכה");
-
-                // שמירת הקובץ
-                const fileName = `דוח_הערכה_${branch}_${megama}.xlsx`;
-                XLSX.writeFile(wb, fileName);
+                XLSX.utils.book_append_sheet(wb, ws, "דוח");
+                XLSX.writeFile(wb, `דוח_${branch}_${megama}.xlsx`);
             }
         </script>
     </body>
