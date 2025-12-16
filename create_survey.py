@@ -265,7 +265,7 @@ def generate_survey_final_mapping():
                     <span>שמור והורד אקסל</span> 📥
                 </button>
                 <div class="send-msg hidden" id="sendMsg">
-                    📋 נא לשלוח את הטופס ל...
+                    📋 בסיום מילוי הסקר נא לשלוח את הטופס לדוד ורדי
                 </div>
             </div>
         </aside>
